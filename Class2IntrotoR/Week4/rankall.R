@@ -38,12 +38,14 @@ rankall <- function(outcome, num = "best"){
                         num <- 1
                 }
                 if(num == "worst"){
-                        num <- length(working_df)
+                        num <- nrow(working_df)
                 }
+                
+                row.names(working_df) <- NULL
                 
                 working_df <- working_df[num,]
                 
-                append_df[nrow(append_df) + 1,] = working_df[num,]
+                append_df[nrow(append_df) + 1,] = working_df
                 
         }
         

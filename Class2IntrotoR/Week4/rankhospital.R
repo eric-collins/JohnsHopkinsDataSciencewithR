@@ -39,7 +39,7 @@ rankhospital <- function(state, outcome, num = "best") {
                 num <- 1
         }
         if(num == "worst"){
-                num <- length(statedf)
+                num <- nrow(statedf)
         }
         
         statedf <- statedf[order(statedf[[outcome]], statedf$Hospital.Name),]
