@@ -1,0 +1,73 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Apply strsplit() to split all the names of the data frame on the characters "wgtp". What is the value of the 123 element of the resulting list?
+
+```{r}
+q1 <- read.csv("Quiz4Download1.csv")
+split <- strsplit(names(q1), "wgtp")
+split[123]
+```
+Remove the commas from the GDP numbers in millions of dollars and average them. What is the average?
+```{r}
+library(tidyverse)
+library(dplyr)
+q2 <- read.csv("Quiz4Download2.csv")
+
+q2 <- q2[5:219,]
+
+q2$X.3 <- as.numeric(gsub(",","", q2$X.3))
+q2 <- q2[!is.na(q2$X.3),]
+
+mean(q2$X.3)
+
+```
+
+In the data set from Question 2 what is a regular expression that would allow you to count the number of countries whose name begins with "United"? Assume that the variable with the country names in it is named countryNames. How many countries begin with United? 
+
+```{r}
+length(grep("^United", q2$X.2))
+```
+
+Match the data based on the country shortcode. Of the countries for which the end of the fiscal year is available, how many end in June?
+```{r}
+merge1 <- read.csv("Quiz4Download3.csv")
+names(merge1) <- c("CountryCode", "GDPRank", "NotUseful", "CountryName", "GDP")
+
+merge1<- select(merge1, c("CountryCode", "GDPRank", "CountryName", "GDP"))
+
+merge1 <- merge1[5:219,]
+
+merge2 <- read.csv("Quiz4Download4.csv")
+
+gdpData <- full_join(merge1, merge2, by = "CountryCode")
+
+grab <- (grep("Fiscal", gdpData$Special.Notes))
+gdpData <- gdpData[grab,]
+
+length(grep("June", gdpData$Special.Notes))
+```
+
+You can use the quantmod (http://www.quantmod.com/) package to get historical stock prices for publicly traded companies on the NASDAQ and NYSE. Use the following code to download data on Amazon's stock price and get the times the data was sampled.
+How many values were collected in 2012? How many values were collected on Mondays in 2012?
+```{r}
+library(quantmod)
+library(lubridate)
+amzn = getSymbols("AMZN",auto.assign=FALSE)
+sampleTimes = index(amzn)
+class(sampleTimes)
+
+greaterthantwentytwelvedays <- subset(sampleTimes, sampleTimes > as.Date("2012-01-01"))
+
+twentytwelvedays <- subset(greaterthantwentytwelvedays, greaterthantwentytwelvedays < as.Date("2013-01-01"))
+
+weekdays <- sapply(twentytwelvedays, wday)
+mondays <- subset(weekdays, weekdays == 2)
+
+length(twentytwelvedays); length(mondays)
+
+
+```
+
+
