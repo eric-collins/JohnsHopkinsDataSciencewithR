@@ -1,0 +1,128 @@
+---
+title: "Coursera Johns Hopkins Data Science Reproduceable Research Peer Assignment"
+output:
+  html_document:
+    df_print: paged
+---
+
+#### Overview
+
+This is the first peer reviewed assignment for the Johns Hopkins Coursera Reproduceable Research class. The dataset is the measured steps of people, measured at 5 minute intervals throughout the day. The requirements are:
+
+Code for reading in the dataset and/or processing the data
+
+Histogram of the total number of steps taken each day
+
+Mean and median number of steps taken each day
+
+Time series plot of the average number of steps taken
+
+The 5-minute interval that, on average, contains the maximum number of steps
+
+Code to describe and show a strategy for imputing missing data
+
+Histogram of the total number of steps taken each day after missing values are imputed
+
+Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
+
+### Code for reading in the dataset and/or processing the data
+
+First things first, read in the data, and take a gander. 
+```{r}
+df <- read.csv("activity.csv")
+head(df)
+```
+There's a few ways to handle the NA's but we're going to wait to see how it unfolds
+
+### Histogram of the total number of steps taken each day
+
+```{r}
+total_steps <- tapply(df$step, df$date, FUN = sum)
+hist(total_steps)
+```
+
+### Mean and median number of steps taken each day
+
+Five number summary time
+```{r}
+summary(total_steps)
+```
+
+### Time series plot of the average number of steps taken
+
+It's further documented in the assignment it's the average number of steps taken at each interval, averaged across all days. 
+
+```{r}
+library(ggplot2)
+ggplot(data = df, mapping = aes(x = interval, y = steps)) + 
+        stat_summary(fun = "mean", geom = "line")
+```
+
+### The 5-minute interval that, on average, contains the maximum number of steps
+
+To accomplish this, we need to average intervals across all days, and report the max of that. 
+```{r}
+which.max(tapply(df$steps, df$interval, FUN = mean, na.rm = TRUE))
+```
+Interval 835 has the max average number of steps. If we look at the graph above, that makes a lot of sense. 
+
+
+### Code to describe and show a strategy for imputing missing data
+#### Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NA'S)
+
+```{r}
+nas <- is.na(df$steps)
+sum(nas)
+```
+
+2304 steps with NA rows. 
+
+#### Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc
+#### Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+This should be fun, and a good opportunity to use dplyr
+```{r}
+library(dplyr)
+
+working_df <- df %>% group_by(interval) %>%
+        mutate(steps = ifelse(is.na(steps), mean(steps, na.rm = TRUE), steps))
+
+nas <- is.na(working_df$steps)
+sum(nas)
+
+```
+
+So we have a dataset with no nas, so that's good. 
+
+
+#### Histogram of the total number of steps taken each day after missing values are imputed
+```{r}
+total_steps <- tapply(working_df$steps, working_df$date, FUN = sum)
+hist(total_steps)
+
+summary(total_steps)
+```
+
+NAs dropped the first quarter significantly, but otherwise didn't immediately impact the 5 number summary. 
+
+### Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+```{r}
+library(lubridate)
+
+working_df$weekday_label <- ""
+working_df$weekday <- wday(df$date, label = TRUE)
+working_df$weekday_label[working_df$weekday == "Sun"] <- "Weekend"
+working_df$weekday_label[working_df$weekday == "Sat"] <- "Weekend"
+working_df$weekday_label[working_df$weekday_label != "Weekend"] <- "Weekday"
+working_df$weekday_label <- as.factor(working_df$weekday_label)
+```
+
+Now we have a factor variable that differentiates weekdays from weekends. Now we can plot
+
+```{r}
+ggplot(data = working_df, mapping = aes(x = interval, y = steps)) + stat_summary(geom = "line", fun = "mean") + facet_grid(col = vars(working_df$weekday_label))
+```
+

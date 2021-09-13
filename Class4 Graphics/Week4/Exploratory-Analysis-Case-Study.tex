@@ -1,0 +1,760 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Annotated Walkthrough of Air Pollution Case Study: Coursera Johns Hopkins Data Science with R},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Annotated Walkthrough of Air Pollution Case Study: Coursera Johns
+Hopkins Data Science with R}
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+\maketitle
+
+\hypertarget{the-question}{%
+\subsection{The Question}\label{the-question}}
+
+To demonstrate some exploratory data analysis, Dr.~Peng asks the
+question ``Is air pollution lower in 2012 than it was in 1999?'' He
+decides to measure that question using fine particulate in the air, or
+PM2.5. We download daily data from the EPA website, and begin by reading
+in the data. In his walkthrough, Dr.~Peng has to do some renaming, but
+the EPA has cleaned the data for us since he posted the video.
+
+\hypertarget{the-process}{%
+\subsubsection{The Process}\label{the-process}}
+
+\hypertarget{number-summaries}{%
+\paragraph{5 Number Summaries}\label{number-summaries}}
+
+First we read in our data, and take stock of what we have.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pm01 }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"daily\_88101\_1999.csv"}\NormalTok{)}
+\FunctionTok{dim}\NormalTok{(pm01)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 103210     29
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(pm01)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   State.Code County.Code Site.Num Parameter.Code POC Latitude Longitude Datum
+## 1          1          27        1          88101   1 33.28493 -85.80361 NAD83
+## 2          1          27        1          88101   1 33.28493 -85.80361 NAD83
+## 3          1          27        1          88101   1 33.28493 -85.80361 NAD83
+## 4          1          27        1          88101   1 33.28493 -85.80361 NAD83
+## 5          1          27        1          88101   1 33.28493 -85.80361 NAD83
+## 6          1          27        1          88101   1 33.28493 -85.80361 NAD83
+##             Parameter.Name Sample.Duration Pollutant.Standard Date.Local
+## 1 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 1999-01-12
+## 2 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 1999-01-15
+## 3 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 1999-01-18
+## 4 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 1999-01-21
+## 5 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 1999-01-24
+## 6 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 1999-01-27
+##              Units.of.Measure Event.Type Observation.Count Observation.Percent
+## 1 Micrograms/cubic meter (LC)       None                 1                 100
+## 2 Micrograms/cubic meter (LC)       None                 1                 100
+## 3 Micrograms/cubic meter (LC)       None                 1                 100
+## 4 Micrograms/cubic meter (LC)       None                 1                 100
+## 5 Micrograms/cubic meter (LC)       None                 1                 100
+## 6 Micrograms/cubic meter (LC)       None                 1                 100
+##   Arithmetic.Mean X1st.Max.Value X1st.Max.Hour AQI Method.Code
+## 1             8.8            8.8             0  37         120
+## 2            14.9           14.9             0  57         120
+## 3             3.8            3.8             0  16         120
+## 4             9.0            9.0             0  38         120
+## 5             5.4            5.4             0  23         120
+## 6            20.1           20.1             0  68         120
+##                                           Method.Name Local.Site.Name
+## 1 Andersen RAAS2.5-300 PM2.5 SEQ w/WINS - GRAVIMETRIC         ASHLAND
+## 2 Andersen RAAS2.5-300 PM2.5 SEQ w/WINS - GRAVIMETRIC         ASHLAND
+## 3 Andersen RAAS2.5-300 PM2.5 SEQ w/WINS - GRAVIMETRIC         ASHLAND
+## 4 Andersen RAAS2.5-300 PM2.5 SEQ w/WINS - GRAVIMETRIC         ASHLAND
+## 5 Andersen RAAS2.5-300 PM2.5 SEQ w/WINS - GRAVIMETRIC         ASHLAND
+## 6 Andersen RAAS2.5-300 PM2.5 SEQ w/WINS - GRAVIMETRIC         ASHLAND
+##           Address State.Name County.Name City.Name CBSA.Name
+## 1 ASHLAND AIRPORT    Alabama        Clay   Ashland          
+## 2 ASHLAND AIRPORT    Alabama        Clay   Ashland          
+## 3 ASHLAND AIRPORT    Alabama        Clay   Ashland          
+## 4 ASHLAND AIRPORT    Alabama        Clay   Ashland          
+## 5 ASHLAND AIRPORT    Alabama        Clay   Ashland          
+## 6 ASHLAND AIRPORT    Alabama        Clay   Ashland          
+##   Date.of.Last.Change
+## 1          2014-06-11
+## 2          2014-06-11
+## 3          2014-06-11
+## 4          2014-06-11
+## 5          2014-06-11
+## 6          2014-06-11
+\end{verbatim}
+
+29 columns and 103210 rows, not a small dataset. In our data, the,
+actual sample is stored in the column ``Arithmetic.Mean''.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(pm01}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00    7.20   11.50   13.78   17.90  157.10
+\end{verbatim}
+
+The median and mean float together, but the max is extreme compared to
+either.
+
+Now we read in the second dataset.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pm02 }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"daily\_88101\_2012.csv"}\NormalTok{)}
+\FunctionTok{dim}\NormalTok{(pm02)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 276671     29
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(pm02)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   State.Code County.Code Site.Num Parameter.Code POC Latitude Longitude Datum
+## 1          1           3       10          88101   1 30.49748 -87.88026 NAD83
+## 2          1           3       10          88101   1 30.49748 -87.88026 NAD83
+## 3          1           3       10          88101   1 30.49748 -87.88026 NAD83
+## 4          1           3       10          88101   1 30.49748 -87.88026 NAD83
+## 5          1           3       10          88101   1 30.49748 -87.88026 NAD83
+## 6          1           3       10          88101   1 30.49748 -87.88026 NAD83
+##             Parameter.Name Sample.Duration Pollutant.Standard Date.Local
+## 1 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 2012-01-01
+## 2 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 2012-01-04
+## 3 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 2012-01-07
+## 4 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 2012-01-10
+## 5 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 2012-01-13
+## 6 PM2.5 - Local Conditions         24 HOUR  PM25 24-hour 2012 2012-01-16
+##              Units.of.Measure Event.Type Observation.Count Observation.Percent
+## 1 Micrograms/cubic meter (LC)       None                 1                 100
+## 2 Micrograms/cubic meter (LC)       None                 1                 100
+## 3 Micrograms/cubic meter (LC)       None                 1                 100
+## 4 Micrograms/cubic meter (LC)       None                 1                 100
+## 5 Micrograms/cubic meter (LC)       None                 1                 100
+## 6 Micrograms/cubic meter (LC)       None                 1                 100
+##   Arithmetic.Mean X1st.Max.Value X1st.Max.Hour AQI Method.Code
+## 1             6.7            6.7             0  28         118
+## 2             9.0            9.0             0  38         118
+## 3             6.5            6.5             0  27         118
+## 4             7.0            7.0             0  29         118
+## 5             5.8            5.8             0  24         118
+## 6             8.0            8.0             0  33         118
+##                                              Method.Name   Local.Site.Name
+## 1 R & P Model 2025 PM2.5 Sequential w/WINS - GRAVIMETRIC FAIRHOPE, Alabama
+## 2 R & P Model 2025 PM2.5 Sequential w/WINS - GRAVIMETRIC FAIRHOPE, Alabama
+## 3 R & P Model 2025 PM2.5 Sequential w/WINS - GRAVIMETRIC FAIRHOPE, Alabama
+## 4 R & P Model 2025 PM2.5 Sequential w/WINS - GRAVIMETRIC FAIRHOPE, Alabama
+## 5 R & P Model 2025 PM2.5 Sequential w/WINS - GRAVIMETRIC FAIRHOPE, Alabama
+## 6 R & P Model 2025 PM2.5 Sequential w/WINS - GRAVIMETRIC FAIRHOPE, Alabama
+##                                                    Address State.Name
+## 1 FAIRHOPE HIGH SCHOOL, 1 PIRATE DRIVE, FAIRHOPE,  ALABAMA    Alabama
+## 2 FAIRHOPE HIGH SCHOOL, 1 PIRATE DRIVE, FAIRHOPE,  ALABAMA    Alabama
+## 3 FAIRHOPE HIGH SCHOOL, 1 PIRATE DRIVE, FAIRHOPE,  ALABAMA    Alabama
+## 4 FAIRHOPE HIGH SCHOOL, 1 PIRATE DRIVE, FAIRHOPE,  ALABAMA    Alabama
+## 5 FAIRHOPE HIGH SCHOOL, 1 PIRATE DRIVE, FAIRHOPE,  ALABAMA    Alabama
+## 6 FAIRHOPE HIGH SCHOOL, 1 PIRATE DRIVE, FAIRHOPE,  ALABAMA    Alabama
+##   County.Name City.Name                 CBSA.Name Date.of.Last.Change
+## 1     Baldwin  Fairhope Daphne-Fairhope-Foley, AL          2014-06-07
+## 2     Baldwin  Fairhope Daphne-Fairhope-Foley, AL          2014-06-07
+## 3     Baldwin  Fairhope Daphne-Fairhope-Foley, AL          2014-06-07
+## 4     Baldwin  Fairhope Daphne-Fairhope-Foley, AL          2014-06-07
+## 5     Baldwin  Fairhope Daphne-Fairhope-Foley, AL          2014-06-07
+## 6     Baldwin  Fairhope Daphne-Fairhope-Foley, AL          2014-06-07
+\end{verbatim}
+
+Over double the observances since 1999. Dr.~Peng attributes this to an
+increase in air monitoring stations.
+
+Now we can compare our 5 number summaries. For ease of use, he assigns
+the sample value columns to variables to easily call them.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x0 }\OtherTok{\textless{}{-}}\NormalTok{ pm01}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean}
+\NormalTok{x1 }\OtherTok{\textless{}{-}}\NormalTok{ pm02}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(x0)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00    7.20   11.50   13.78   17.90  157.10
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(x1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  -6.312   5.100   7.917   9.141  11.700 236.254
+\end{verbatim}
+
+We can see every metric except the maximum has dropped. Dr.~Peng then
+demonstrates an exploratory boxplot.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{boxplot}\NormalTok{(x0, x1)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+Dr.~Peng comments these are difficult to look at, and that data are
+heavily skewed towards 0, so perhaps a transformation is in order. For
+the robustness of the walkthrough, let's make a histogram of these to
+see what he's talking about.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{hist}\NormalTok{(x0)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{hist}\NormalTok{(x1)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-7-2.pdf}
+
+Ideally, these would be bell-curve. Dr.~Peng performs a log
+transformation on both, and then runs another boxplot.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{boxplot}\NormalTok{(}\FunctionTok{log10}\NormalTok{(x0), }\FunctionTok{log10}\NormalTok{(x1))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in boxplot.default(log10(x0), log10(x1)): NaNs produced
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in bplt(at[i], wid = width[i], stats = z$stats[, i], out = z$out[z$group
+## == : Outlier (-Inf) in boxplot 1 is not drawn
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in bplt(at[i], wid = width[i], stats = z$stats[, i], out = z$out[z$group
+## == : Outlier (-Inf) in boxplot 2 is not drawn
+\end{verbatim}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-8-1.pdf}
+
+The median is well below what it used to be, but Dr.~Peng notes that
+while the average may be lower, there are more extreme values. Again,
+this may just be do to more sensors than we had before.
+
+\hypertarget{why-are-there-negative-values}{%
+\paragraph{Why are there negative
+values?}\label{why-are-there-negative-values}}
+
+Dr.~Peng notes that PM2.5 is measured by the mass of the particulate on
+a filter on the sensor, so it doesn't make sense that there are negative
+values. He begins by creating a logical vector whether the sample is
+below 0.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{negative }\OtherTok{\textless{}{-}}\NormalTok{ x1 }\SpecialCharTok{\textless{}} \DecValTok{0} 
+\FunctionTok{str}\NormalTok{(negative)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  logi [1:276671] FALSE FALSE FALSE FALSE FALSE FALSE ...
+\end{verbatim}
+
+He wasn't lying, that's a logical vector. Now we can take the sum of the
+vector, and that will return the number of negative values we have in
+the 2012 dataset.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sum}\NormalTok{(negative)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1130
+\end{verbatim}
+
+We have far less than Dr.~Peng, but again, that's because our data have
+been cleaned since he posted the video. We can take the mean of the
+vector and see the proportion of our data that are negative.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{mean}\NormalTok{(negative)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.004084273
+\end{verbatim}
+
+Less than half of a percent, I think we are well in the range of error
+here. Let's check the dates column.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dates }\OtherTok{\textless{}{-}}\NormalTok{ pm02}\SpecialCharTok{$}\NormalTok{Date.Local}
+\FunctionTok{str}\NormalTok{(dates)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  chr [1:276671] "2012-01-01" "2012-01-04" "2012-01-07" "2012-01-10" ...
+\end{verbatim}
+
+Our dates are stored as character. Dr.~Peng's are stored an numbers, but
+the process for conversion is all the same.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(lubridate)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'lubridate'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     date, intersect, setdiff, union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dates }\OtherTok{\textless{}{-}} \FunctionTok{ymd}\NormalTok{(dates)}
+\FunctionTok{str}\NormalTok{(dates)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  Date[1:276671], format: "2012-01-01" "2012-01-04" "2012-01-07" "2012-01-10" "2012-01-13" ...
+\end{verbatim}
+
+Dr.~Peng uses as.Date, but the lubridate package makes it much simpler.
+
+Let's see where collection occurs.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{hist}\NormalTok{(dates, }\AttributeTok{breaks =} \StringTok{"months"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-14-1.pdf}
+A pretty fair spread of dates. Let's look at the negative dates.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{hist}\NormalTok{(dates[negative], }\StringTok{"months"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-15-1.pdf}
+
+Negative dates have a much higher prevalence in the deep summer and
+winter months, with sharp drop offs in spring and fall. It's certainly
+worth investigating further at a later point.
+
+\hypertarget{exploring-change-at-a-single-monitor}{%
+\paragraph{Exploring change at a single
+monitor}\label{exploring-change-at-a-single-monitor}}
+
+Let's try and find a monitor at a state that was there in 1999 and in
+2012. Dr.~Peng picks New York, because that's where he's from, I'll pick
+Florida because that's where I'm from.
+
+First let's grab all the monitors from the state you want to look at.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{site0 }\OtherTok{\textless{}{-}} \FunctionTok{unique}\NormalTok{(}\FunctionTok{subset}\NormalTok{(pm01, State.Code }\SpecialCharTok{==} \DecValTok{12}\NormalTok{, }\FunctionTok{c}\NormalTok{(County.Code, Site.Num)))}
+\NormalTok{site1 }\OtherTok{\textless{}{-}} \FunctionTok{unique}\NormalTok{(}\FunctionTok{subset}\NormalTok{(pm02, State.Code }\SpecialCharTok{==} \DecValTok{12}\NormalTok{, }\FunctionTok{c}\NormalTok{(County.Code, Site.Num)))}
+\end{Highlighting}
+\end{Shaded}
+
+Now we have all the sites in Florida. We want to look across these two
+datasets to find a match. First, let's give every site a unique ID by
+pasting together the County Code and Site Number
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{site0 }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(site0[,}\DecValTok{1}\NormalTok{], site0[,}\DecValTok{2}\NormalTok{], }\AttributeTok{sep =} \StringTok{"."}\NormalTok{)}
+\NormalTok{site1 }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(site1[,}\DecValTok{1}\NormalTok{], site1[,}\DecValTok{2}\NormalTok{], }\AttributeTok{sep =} \StringTok{"."}\NormalTok{)}
+\FunctionTok{head}\NormalTok{(site1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "1.23"    "9.7"     "11.1002" "11.2003" "11.5005" "17.5"
+\end{verbatim}
+
+Now every monitor has a unique ID. Let's try to find one that matches.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{both }\OtherTok{\textless{}{-}} \FunctionTok{intersect}\NormalTok{(site0, site1)}
+\NormalTok{both}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1] "1.23"     "11.1002"  "17.5"     "31.98"    "31.99"    "33.4"    
+##  [7] "71.5"     "73.12"    "86.1016"  "86.6001"  "95.2002"  "99.9"    
+## [13] "103.18"   "105.6006" "115.13"   "117.1002" "127.5002"
+\end{verbatim}
+
+Nice, we have plenty to choose from. Let's try and find a good one that
+has a lot of observations to look at.
+
+First, we'll create a new variable called county.site that uses our
+unique identifier. Then we can see how many observations that site has.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pm01}\SpecialCharTok{$}\NormalTok{county.site }\OtherTok{\textless{}{-}} \FunctionTok{with}\NormalTok{(pm01, }\FunctionTok{paste}\NormalTok{(County.Code, Site.Num, }\AttributeTok{sep =} \StringTok{"."}\NormalTok{))}
+\NormalTok{pm02}\SpecialCharTok{$}\NormalTok{county.site }\OtherTok{\textless{}{-}} \FunctionTok{with}\NormalTok{(pm02, }\FunctionTok{paste}\NormalTok{(County.Code, Site.Num, }\AttributeTok{sep =} \StringTok{"."}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+Now we want to subset the dataframes to use just Florida, and where the
+monitors intersect. Fortunately, we have ``best'', the vector we save
+earlier.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cnt1 }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(pm01, State.Code }\SpecialCharTok{==} \DecValTok{12} \SpecialCharTok{\&}\NormalTok{ county.site }\SpecialCharTok{\%in\%}\NormalTok{ both)}
+\NormalTok{cnt2 }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(pm02, State.Code }\SpecialCharTok{==} \DecValTok{12} \SpecialCharTok{\&}\NormalTok{ county.site }\SpecialCharTok{\%in\%}\NormalTok{ both)}
+\end{Highlighting}
+\end{Shaded}
+
+And now we want to split this dataframe by monitor, and see how many
+observations we have.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sapply}\NormalTok{(}\FunctionTok{split}\NormalTok{(cnt1, cnt1}\SpecialCharTok{$}\NormalTok{county.site), nrow)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     1.23   103.18 105.6006  11.1002   115.13 117.1002 127.5002     17.5 
+##      112      348       77      334      110      105      110       97 
+##    31.98    31.99     33.4     71.5    73.12  86.1016  86.6001  95.2002 
+##      134      139      112      110      111      275      101      352 
+##     99.9 
+##       21
+\end{verbatim}
+
+It's a little hard to read, but we can see the top number is the monitor
+and the bottom number is the number of observations for each. Let's do
+the same thing for the later period.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sapply}\NormalTok{(}\FunctionTok{split}\NormalTok{(cnt2, cnt2}\SpecialCharTok{$}\NormalTok{county.site), nrow)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     1.23   103.18 105.6006  11.1002   115.13 117.1002 127.5002     17.5 
+##       94      269       87      292      104       99       82       99 
+##    31.98    31.99     33.4     71.5    73.12  86.1016  86.6001  95.2002 
+##      200      256       98      101       92      284      217      265 
+##     99.9 
+##      827
+\end{verbatim}
+
+Wow, we have a lot of good choices. I'm going to go with Volusia County,
+127.5002, because that's where I went to college (Go Hatters!)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pm1sub }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(pm01, State.Code }\SpecialCharTok{==} \DecValTok{12} \SpecialCharTok{\&}\NormalTok{ County.Code }\SpecialCharTok{==} \DecValTok{127} \SpecialCharTok{\&}\NormalTok{ Site.Num }\SpecialCharTok{==} \DecValTok{5002}\NormalTok{)}
+\NormalTok{pm2sub }\OtherTok{\textless{}{-}} \FunctionTok{subset}\NormalTok{(pm02, State.Code }\SpecialCharTok{==} \DecValTok{12} \SpecialCharTok{\&}\NormalTok{ County.Code }\SpecialCharTok{==} \DecValTok{127} \SpecialCharTok{\&}\NormalTok{ Site.Num }\SpecialCharTok{==} \DecValTok{5002}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Now we have a nice subset of data that we can plot. Let's plot this as a
+time series to see if things have decreased over time.
+
+First we need to grab our dates and convert them appropriately.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x0dates }\OtherTok{\textless{}{-}} \FunctionTok{ymd}\NormalTok{(pm1sub}\SpecialCharTok{$}\NormalTok{Date.Local)}
+\NormalTok{x1dates }\OtherTok{\textless{}{-}} \FunctionTok{ymd}\NormalTok{(pm2sub}\SpecialCharTok{$}\NormalTok{Date.Local)}
+\end{Highlighting}
+\end{Shaded}
+
+And now we grab our samples as well
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x0samples }\OtherTok{\textless{}{-}}\NormalTok{ pm1sub}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean}
+\NormalTok{x1samples }\OtherTok{\textless{}{-}}\NormalTok{ pm2sub}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean}
+\end{Highlighting}
+\end{Shaded}
+
+And then Dr.~Peng walks through building scatter plots. For brevity
+sake, I will get together some of the more important ones.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{), }\AttributeTok{mar =} \FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{,}\DecValTok{4}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{))}
+\FunctionTok{plot}\NormalTok{(x0dates, x0samples)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{median}\NormalTok{(x0samples))}
+
+\FunctionTok{plot}\NormalTok{(x1dates, x1samples)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{median}\NormalTok{(x1samples))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-26-1.pdf}
+
+This seems like the most recent data has a higher median that the old
+data\ldots. oh wait, our scales are all wrong. Let's dynamically adjust
+our scale to get a better picture of what's happening.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rng }\OtherTok{=} \FunctionTok{range}\NormalTok{(x0samples, x1samples)}
+
+
+
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{), }\AttributeTok{mar =} \FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{,}\DecValTok{4}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{))}
+\FunctionTok{plot}\NormalTok{(x0dates, x0samples, }\AttributeTok{ylim =}\NormalTok{ rng)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{median}\NormalTok{(x0samples))}
+
+\FunctionTok{plot}\NormalTok{(x1dates, x1samples, }\AttributeTok{ylim =}\NormalTok{ rng)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{median}\NormalTok{(x1samples))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-27-1.pdf}
+
+At this monitor, it certifiably looks like our median PM2.5 has
+decreased over time.
+
+Now let's look at how the change has taken place at the state level.
+
+\hypertarget{exploring-change-at-the-state-level}{%
+\paragraph{Exploring Change at the State
+Level}\label{exploring-change-at-the-state-level}}
+
+Let's take the average value by state.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mean01 }\OtherTok{\textless{}{-}} \FunctionTok{tapply}\NormalTok{(pm01}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean, pm01}\SpecialCharTok{$}\NormalTok{State.Code, mean)}
+\NormalTok{mean02 }\OtherTok{\textless{}{-}} \FunctionTok{tapply}\NormalTok{(pm02}\SpecialCharTok{$}\NormalTok{Arithmetic.Mean, pm02}\SpecialCharTok{$}\NormalTok{State.Code, mean)}
+
+\FunctionTok{summary}\NormalTok{(mean01)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   4.843   9.529  12.353  12.460  15.649  19.951
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(mean02)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   4.916   7.527   8.763   8.824  10.311  13.499
+\end{verbatim}
+
+With all that prep, let's create a dataframe with the averages of the
+state at each time period, and then combine them with a merge.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d0 }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{state =} \FunctionTok{names}\NormalTok{(mean01), }\AttributeTok{mean =}\NormalTok{ mean01)}
+\NormalTok{d1 }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{state =} \FunctionTok{names}\NormalTok{(mean02), }\AttributeTok{mean =}\NormalTok{ mean02)}
+
+\NormalTok{mrg }\OtherTok{\textless{}{-}} \FunctionTok{merge}\NormalTok{(d0, d1, }\AttributeTok{by =} \StringTok{"state"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Now we want to take those two means, and plot them next to each other.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{))}
+
+\FunctionTok{with}\NormalTok{(mrg, }\FunctionTok{plot}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1999}\NormalTok{,}\DecValTok{51}\NormalTok{), mrg[,}\DecValTok{2}\NormalTok{], }\AttributeTok{xlim =} \FunctionTok{c}\NormalTok{(}\DecValTok{1999}\NormalTok{, }\DecValTok{2013}\NormalTok{)))}
+
+\FunctionTok{with}\NormalTok{(mrg, }\FunctionTok{points}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{2012}\NormalTok{, }\DecValTok{51}\NormalTok{), mrg[,}\DecValTok{3}\NormalTok{]))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-30-1.pdf}
+
+Nice! Now we just need to connect them with segments.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{))}
+
+\FunctionTok{with}\NormalTok{(mrg, }\FunctionTok{plot}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1999}\NormalTok{,}\DecValTok{51}\NormalTok{), mrg[,}\DecValTok{2}\NormalTok{], }\AttributeTok{xlim =} \FunctionTok{c}\NormalTok{(}\DecValTok{1999}\NormalTok{, }\DecValTok{2013}\NormalTok{)))}
+
+\FunctionTok{with}\NormalTok{(mrg, }\FunctionTok{points}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{2012}\NormalTok{, }\DecValTok{51}\NormalTok{), mrg[,}\DecValTok{3}\NormalTok{]))}
+
+\FunctionTok{segments}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{1999}\NormalTok{, }\DecValTok{51}\NormalTok{), mrg[,}\DecValTok{2}\NormalTok{], }\FunctionTok{rep}\NormalTok{(}\DecValTok{2012}\NormalTok{, }\DecValTok{51}\NormalTok{), mrg[,}\DecValTok{3}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Exploratory-Analysis-Case-Study_files/figure-latex/unnamed-chunk-31-1.pdf}
+
+We can send the general trend is down! We could do a lot more with this,
+but this is a good stopping point.
+
+\end{document}

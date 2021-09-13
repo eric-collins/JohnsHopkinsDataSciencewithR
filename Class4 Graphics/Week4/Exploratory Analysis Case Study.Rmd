@@ -1,0 +1,279 @@
+---
+title: 'Annotated Walkthrough of Air Pollution Case Study: Coursera Johns Hopkins
+  Data Science with R'
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+## The Question
+To demonstrate some exploratory data analysis, Dr. Peng asks the question "Is air pollution lower in 2012 than it was in 1999?" He decides to measure that question using fine particulate in the air, or PM2.5. We download daily data from the EPA website, and begin by reading in the data. In his walkthrough, Dr. Peng has to do some renaming, but the EPA has cleaned the data for us since he posted the video.
+
+### The Process
+
+#### 5 Number Summaries
+
+
+First we read in our data, and take stock of what we have. 
+```{r}
+pm01 <- read.csv("daily_88101_1999.csv")
+dim(pm01)
+head(pm01)
+```
+29 columns and 103210 rows, not a small dataset. In our data, the, actual sample is stored in the column "Arithmetic.Mean". 
+
+```{r}
+summary(pm01$Arithmetic.Mean)
+```
+
+The median and mean float together, but the max is extreme compared to either. 
+
+Now we read in the second dataset. 
+```{r}
+pm02 <- read.csv("daily_88101_2012.csv")
+dim(pm02)
+head(pm02)
+```
+
+Over double the observances since 1999. Dr. Peng attributes this to an increase in air monitoring stations.
+
+Now we can compare our 5 number summaries. For ease of use, he assigns the sample value columns to variables to easily call them. 
+
+```{r}
+x0 <- pm01$Arithmetic.Mean
+x1 <- pm02$Arithmetic.Mean
+```
+
+```{r}
+summary(x0)
+summary(x1)
+```
+
+We can see every metric except the maximum has dropped. Dr. Peng then demonstrates an exploratory boxplot. 
+
+```{r}
+boxplot(x0, x1)
+```
+
+Dr. Peng comments these are difficult to look at, and that data are heavily skewed towards 0, so perhaps a transformation is in order. For the robustness of the walkthrough, let's make a histogram of these to see what he's talking about. 
+
+```{r}
+hist(x0)
+hist(x1)
+```
+
+Ideally, these would be bell-curve. Dr. Peng performs a log transformation on both, and then runs another boxplot. 
+
+```{r}
+boxplot(log10(x0), log10(x1))
+```
+
+The median is well below what it used to be, but Dr. Peng notes that while the average may be lower, there are more extreme values. Again, this may just be do to more sensors than we had before. 
+
+#### Why are there negative values?
+
+
+
+Dr. Peng notes that PM2.5 is measured by the mass of the particulate on a filter on the sensor, so it doesn't make sense that there are negative values. He begins by creating a logical vector whether the sample is below 0. 
+
+```{r}
+negative <- x1 < 0 
+str(negative)
+```
+
+He wasn't lying, that's a logical vector. Now we can take the sum of the vector, and that will return the number of negative values we have in the 2012 dataset. 
+
+```{r}
+sum(negative)
+```
+
+We have far less than Dr. Peng, but again, that's because our data have been cleaned since he posted the video. We can take the mean of the vector and see the proportion of our data that are negative. 
+
+```{r}
+mean(negative)
+```
+Less than half of a percent, I think we are well in the range of error here. Let's check the dates column. 
+
+```{r}
+dates <- pm02$Date.Local
+str(dates)
+```
+
+Our dates are stored as character. Dr. Peng's are stored an numbers, but the process for conversion is all the same. 
+
+```{r}
+library(lubridate)
+dates <- ymd(dates)
+str(dates)
+```
+
+Dr. Peng uses as.Date, but the lubridate package makes it much simpler. 
+
+Let's see where collection occurs.
+
+```{r}
+hist(dates, breaks = "months")
+```
+A pretty fair spread of dates. Let's look at the negative dates.
+
+```{r}
+hist(dates[negative], "months")
+```
+
+Negative dates have a much higher prevalence in the deep summer and winter months, with sharp drop offs in spring and fall. It's certainly worth investigating further at a later point. 
+
+#### Exploring change at a single monitor
+
+
+
+Let's try and find a monitor at a state that was there in 1999 and in 2012. Dr. Peng picks New York, because that's where he's from, I'll pick Florida because that's where I'm from. 
+
+First let's grab all the monitors from the state you want to look at. 
+
+```{r}
+site0 <- unique(subset(pm01, State.Code == 12, c(County.Code, Site.Num)))
+site1 <- unique(subset(pm02, State.Code == 12, c(County.Code, Site.Num)))
+```
+Now we have all the sites in Florida. We want to look across these two datasets to find a match. First, let's give every site a unique ID by pasting together the County Code and Site Number
+
+```{r}
+site0 <- paste(site0[,1], site0[,2], sep = ".")
+site1 <- paste(site1[,1], site1[,2], sep = ".")
+head(site1)
+```
+
+Now every monitor has a unique ID. Let's try to find one that matches. 
+
+```{r}
+both <- intersect(site0, site1)
+both
+```
+
+Nice, we have plenty to choose from. Let's try and find a good one that has a lot of observations to look at. 
+
+First, we'll create a new variable called county.site that uses our unique identifier. Then we can see how many observations that site has. 
+
+```{r}
+pm01$county.site <- with(pm01, paste(County.Code, Site.Num, sep = "."))
+pm02$county.site <- with(pm02, paste(County.Code, Site.Num, sep = "."))
+```
+
+Now we want to subset the dataframes to use just Florida, and where the monitors intersect. Fortunately, we have "best", the vector we save earlier. 
+
+```{r}
+cnt1 <- subset(pm01, State.Code == 12 & county.site %in% both)
+cnt2 <- subset(pm02, State.Code == 12 & county.site %in% both)
+```
+
+And now we want to split this dataframe by monitor, and see how many observations we have. 
+
+```{r}
+sapply(split(cnt1, cnt1$county.site), nrow)
+```
+
+It's a little hard to read, but we can see the top number is the monitor and the bottom number is the number of observations for each. Let's do the same thing for the later period. 
+
+```{r}
+sapply(split(cnt2, cnt2$county.site), nrow)
+```
+
+Wow, we have a lot of good choices. I'm going to go with Volusia County, 127.5002, because that's where I went to college (Go Hatters!)
+
+```{r}
+pm1sub <- subset(pm01, State.Code == 12 & County.Code == 127 & Site.Num == 5002)
+pm2sub <- subset(pm02, State.Code == 12 & County.Code == 127 & Site.Num == 5002)
+```
+Now we have a nice subset of data that we can plot. Let's plot this as a time series to see if things have decreased over time. 
+
+First we need to grab our dates and convert them appropriately. 
+
+```{r}
+x0dates <- ymd(pm1sub$Date.Local)
+x1dates <- ymd(pm2sub$Date.Local)
+```
+
+And now we grab our samples as well
+
+```{r}
+x0samples <- pm1sub$Arithmetic.Mean
+x1samples <- pm2sub$Arithmetic.Mean
+```
+
+And then Dr. Peng walks through building scatter plots. For brevity sake, I will get together some of the more important ones. 
+
+```{r}
+par(mfrow = c(1,2), mar = c(4,4,2,1))
+plot(x0dates, x0samples)
+abline(h = median(x0samples))
+
+plot(x1dates, x1samples)
+abline(h = median(x1samples))
+```
+
+This seems like the most recent data has a higher median that the old data.... oh wait, our scales are all wrong. Let's dynamically adjust our scale to get a better picture of what's happening.
+
+```{r}
+rng = range(x0samples, x1samples)
+
+
+
+par(mfrow = c(1,2), mar = c(4,4,2,1))
+plot(x0dates, x0samples, ylim = rng)
+abline(h = median(x0samples))
+
+plot(x1dates, x1samples, ylim = rng)
+abline(h = median(x1samples))
+```
+
+At this monitor, it certifiably looks like our median PM2.5 has decreased over time.
+
+Now let's look at how the change has taken place at the state level. 
+
+#### Exploring Change at the State Level
+
+Let's take the average value by state. 
+
+```{r}
+mean01 <- tapply(pm01$Arithmetic.Mean, pm01$State.Code, mean)
+mean02 <- tapply(pm02$Arithmetic.Mean, pm02$State.Code, mean)
+
+summary(mean01)
+summary(mean02)
+```
+
+With all that prep, let's create a dataframe with the averages of the state at each time period, and then combine them with a merge. 
+
+```{r}
+d0 <- data.frame(state = names(mean01), mean = mean01)
+d1 <- data.frame(state = names(mean02), mean = mean02)
+
+mrg <- merge(d0, d1, by = "state")
+```
+
+Now we want to take those two means, and plot them next to each other. 
+
+```{r}
+par(mfrow = c(1,1))
+
+with(mrg, plot(rep(1999,51), mrg[,2], xlim = c(1999, 2013)))
+
+with(mrg, points(rep(2012, 51), mrg[,3]))
+```
+
+Nice! Now we just need to connect them with segments.
+
+```{r}
+par(mfrow = c(1,1))
+
+with(mrg, plot(rep(1999,51), mrg[,2], xlim = c(1999, 2013)))
+
+with(mrg, points(rep(2012, 51), mrg[,3]))
+
+segments(rep(1999, 51), mrg[,2], rep(2012, 51), mrg[,3])
+```
+
+We can send the general trend is down! We could do a lot more with this, but this is a good stopping point. 
+
+
