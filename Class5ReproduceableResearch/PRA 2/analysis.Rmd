@@ -1,0 +1,240 @@
+---
+title: 'Severe Weather Analysis: What is the most devastating storm?'
+output:
+  html_document:
+    df_print: paged
+---
+
+#### Synopsis
+
+The purpose of this analysis is to answer two questions:
+
+-   Across the United States, which types of events are most harmful
+    with respect to population health?
+
+-   Across the United States, which types of events have the greatest
+economic consequences?
+
+The data used were provided by the National Oceanic and Atmospheric
+Administration (NOAA), and consisted of logged sever weather events
+dating from 1950 to 2011. The logged data contained the following
+variables that were used during the analysis:
+
+-   EVTYPE: Event type
+-   PROPDMG: Property Damage in dollars
+-   PROPDMGEXP: Property Damage multiplier (K = thousand, M = million, B = billion)
+-   CROPDMG: Crop Damage in dollars
+-   CROPDMGEXP: Crop Damage multiplier (K = thousand, M= million, B = billion)
+-   FATALITIES: Deaths caused by the incident
+-   INJURIES: Injuries caused by the incident
+
+The data was then transformed by multiplying the damage variables by
+their multipliers. Two new variables were engineered:
+
+-   DAMAGE: Total damage in dollars. Property damage was weighted by 3 against crop damage to account for the additional strain on the economy felt by property
+damage
+-   CASUALTIES: Total injuries and deaths caused by the event. Deaths are weighted by 15 against injuries.
+
+The analysis concluded the following:
+
+-   Tornados accounted for the most total casualties
+-   Floods accounted for the most total damage
+-   On average, hurricanes caused the most damage + On average, tsunamis caused the most casualties
+-   On average, hurricanes are the most devastating storm.
+
+#### Data Processing
+
+We want R to do the heavy lifting, so we have it download the data. We
+read in the csv and take a look.
+
+```{r}
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "storm_data.csv")
+df <- read.csv("storm_data.csv")
+
+summary(df)
+```
+
+There's quite a bit of work to be done here. In an ideal world, we would
+know exactly what we have to do so when we load in the data we can set
+our variable types. We can do this manually now.
+
+Let's make a copy of the df to manipulate, and subset on the columns
+that will be used during analysis.
+
+```{r}
+library(dplyr)
+
+w_df <- df
+w_df <- select(w_df, c("BGN_DATE", "STATE", "EVTYPE", "F", "MAG", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP", "LATITUDE", "LONGITUDE"))
+```
+
+Let's start by processing the datetime. For our questions, just the date
+should be okay, we don't need the time or timezone.
+
+```{r}
+library(tidyr)
+library(lubridate)
+
+w_df <- 
+        w_df %>% 
+                separate(BGN_DATE, c("BGN_DATE", "drop_me"), " ")
+
+w_df$BGN_DATE <- mdy(w_df$BGN_DATE)
+
+w_df <- select(w_df, -c("drop_me"))
+```
+
+Now we need to find event types that matter. NOAA has 48 official event
+names that we need to fuzzy match to all the events. First we need a
+list of events to match to. I will be using the stringdist package and
+the amatch function, as well as the Damerau-Levenshtein Distance to
+match. More information can be found at HERE PUT A LINK
+
+```{r}
+#Fuzzy Matching library
+library(stringdist)
+
+#Dictionary of approved events
+dictionary <- c("Astronomical Low Tide","Avalanche","Blizzard","Coastal Flood","Cold/Wind Chill","Debris Flow","Dense Fog","Dense Smoke","Drought","Dust Devil","Dust Storm","Excessive Heat","Extreme Cold/Wind Chill","Flash Flood","Flood","Freezing Fog","Frost/Freeze","Funnel Cloud","Hail","Heat","Heavy Rain","Heavy Snow","High Surf","High Wind","Hurricane/Typhoon","Ice Storm","Lakeshore Flood","Lake-Effect Snow","Lightning","Marine Hail","Marine High Wind","Marine Strong Wind","Marine Thunderstorm Wind","Rip Current","Seiche","Sleet","Storm Tide","Strong Wind","Thunderstorm Wind","Tornado","Tropical Depression","Tropical Storm","Tsunami","Volcanic Ash","Waterspout","Wildfire","Winter Storm","Winter Weather")
+
+#Making everything uppercase to facilitate matching
+dictionary <- toupper(dictionary)
+w_df$EVTYPE <- toupper(w_df$EVTYPE)
+
+#Fuzzy matching using Jaro-Winkler Distance
+w_df$EVENT <- dictionary[amatch(w_df$EVTYPE, dictionary, method = "dl", maxDist = 20)]
+w_df$EVENT <- as.factor(w_df$EVENT)
+```
+
+PROPDMGEXP and CROPDMGEXP is the multiplier for property damage, so we
+need to standardize it. First let's explore how much garbarge is in the
+dataset.
+
+```{r}
+unique(w_df$PROPDMGEXP)
+unique(w_df$CROPDMGEXP)
+```
+
+```{r}
+n_df <- w_df[w_df$PROPDMGEXP %in% c("K", "M", "B", ""), ]
+
+numrows_bad <- nrow((w_df[!w_df$PROPDMGEXP %in% c("K", "M", "B", ""), ]))
+
+numrows_good <- nrow(n_df)
+
+numrows_bad / numrows_good
+```
+
+An exceptionally small percentage of our observations have garbage in
+them, so I think we can drop them without any issues, and then replace
+the blank rows with "K", since it doesn't really matter, as if the cell
+is blank, the value is 0, then the process will be repeated for the
+CROPDMGEXP variable.
+
+```{r}
+n_df$PROPDMGEXP <- sub("^$", "K", n_df$PROPDMGEXP)
+
+c_df <- n_df[n_df$CROPDMGEXP %in% c("K", "M", "B", ""), ]
+c_df$CROPDMGEXP <- sub("^$", "K", c_df$CROPDMGEXP)
+```
+
+Now let's calculate the actual dollar values for damage instead of the
+weird damage number.
+
+```{r}
+c_df$CROPDMGEXP <- sub("K", 1000, c_df$CROPDMGEXP)
+c_df$CROPDMGEXP <- sub("M", 1000000, c_df$CROPDMGEXP)
+c_df$CROPDMGEXP <- sub("B", 1000000000, c_df$CROPDMGEXP)
+
+c_df$PROPDMGEXP <- sub("K", 1000, c_df$PROPDMGEXP)
+c_df$PROPDMGEXP <- sub("M", 1000000, c_df$PROPDMGEXP)
+c_df$PROPDMGEXP <- sub("B", 1000000000, c_df$PROPDMGEXP)
+
+c_df$PROPDMGEXP <- as.numeric(c_df$PROPDMGEXP)
+c_df$CROPDMGEXP <- as.numeric(c_df$CROPDMGEXP)
+
+c_df$PROPDMG <- c_df$PROPDMG * c_df$PROPDMGEXP
+c_df$CROPDMG <- c_df$CROPDMG * c_df$CROPDMGEXP
+
+c_df <- select(c_df, -c("PROPDMGEXP", "CROPDMGEXP"))
+```
+
+And now we get to have a philosophical discussion regarding what
+"population health" and "economic consequences" are.
+
+1.  Population Health: From our dataset, this has to be a function of
+    injuries and fatalities. Deaths are worse by most measures, but they
+    don't put additional strain on hospital resources. For our
+    measurement, a death will be 15 times worse than an injury.
+
+2.  Economic Consequences: From our dataset, economic consequences has
+    to be a function of property damage and crop damage. While crop
+    damage can damage the economy, displaced workers and a rapid
+    increase in the homeless population is worse. For our measurement, a
+    dollar of property damage will be 3 times worse than a dollar of
+    crop damage.
+
+```{r}
+c_df$DAMAGE <- (c_df$PROPDMG * 3) + (c_df$CROPDMG)
+c_df$CASUALTIES <- (c_df$FATALITIES * 15) + (c_df$INJURIES)
+master <- c_df
+```
+
+#### Results
+
+##### Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+```{r}
+library(ggplot2)
+
+sum_df_casualities <- aggregate(CASUALTIES ~ EVENT, data = master,  FUN = sum)
+sum_df_casualities <- sum_df_casualities[order(-sum_df_casualities$CASUALTIES), ]
+
+ggplot(data = head(sum_df_casualities), mapping = aes(x = EVENT, y = CASUALTIES)) + geom_col()
+```
+
+Tornado's are by far the most impactful on population heath.
+
+##### Across the United States, which types of events have the greatest economic consequences?
+
+```{r}
+sum_df_economy <- aggregate(DAMAGE ~ EVENT, data = master,  FUN = sum)
+sum_df_economy <- sum_df_economy[order(-sum_df_economy$DAMAGE), ]
+
+ggplot(data = head(sum_df_economy), mapping = aes(x = EVENT, y = DAMAGE)) + geom_col()
+```
+
+Floods cost more than twice their next competitor, hurricanes.
+
+### (Extra Analysis) On average, what is the most costly storm in terms of health and economic damage?
+
+The questions posed ask which event types have had the greatest impact,
+which is measured by the sum, but not on average. Let's explore that
+instead.
+
+```{r}
+mean_df_economy <- aggregate(DAMAGE ~ EVENT, data = master,  FUN = mean)
+mean_df_people <- aggregate(CASUALTIES ~ EVENT, data = master, FUN = mean)
+mean_df <- merge(mean_df_economy, mean_df_people)
+
+mean_df[order(-mean_df$DAMAGE), ]
+
+ggplot(data = mean_df, mapping = aes(x = CASUALTIES, y = DAMAGE, color = EVENT)) + geom_label(aes(label = EVENT)) + theme(legend.position = "None")
+```
+
+Let's find out what our two outliers are.
+
+```{r}
+mean_df_economy <- aggregate(DAMAGE ~ EVENT, data = master,  FUN = mean)
+mean_df_people <- aggregate(CASUALTIES ~ EVENT, data = master, FUN = mean)
+mean_df <- merge(mean_df_economy, mean_df_people)
+
+mean_df[order(-mean_df$DAMAGE), ]
+```
+
+On average, hurricanes are the worst storms terms of damage, and are
+close behind tsunamis in terms of casualties.
+
+From this analysis, we can conclude that tornado's have caused the most
+overall casualties, floods the most damage, but on average hurricanes
+are the most devastating storm.

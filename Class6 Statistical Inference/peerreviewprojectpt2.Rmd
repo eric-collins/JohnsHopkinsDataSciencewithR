@@ -1,0 +1,105 @@
+---
+title: "Johns Hopkins Coursera: Statistical Inference Peer Reviewed Project, Part 2"
+output: pdf_document
+---
+
+## Part 2: Analysis of the Tooth Growth Dataset
+The requirements of this section are:
+* Provide a basic summary of the tooth growth dataset
+* Compare tooth growth by supp and dose(using only techniques we learned during the course)
+* State conclusions and assumptions
+
+### The ToothGrowth Dataset
+The ToothGrowth dataset was published in *The Statistics of Bioassay* by C.I. Bliss in 1952. 
+
+From the description in the datasets library:
+
+> The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, orange juice or ascorbic acid (a form of vitamin C and coded as VC).
+
+```{r}
+#Read in data
+library(datasets)
+teeth <- ToothGrowth
+#Converting the dose to a factor variable
+teeth$dose <- as.factor(teeth$dose)
+str(teeth)
+```
+
+### Exploratory Analysis
+
+Let's start with a boxplot of the len by dose and supp type. 
+```{r}
+library(ggplot2)
+
+ggplot(teeth, mapping = aes(x = dose, y = len, colour = supp)) + geom_boxplot()
+```
+It generally looks like the cells performed better on Orange juice until the dose became 2mg. It also generally appears higher doses are correlated to higher response lengths of the cells. 
+
+```{r}
+ggplot(teeth, mapping = aes(x = dose, y = len, fill = supp)) + geom_violin()
+```
+
+This is just another way to visualize the boxplot. I think it gives it a bit more gravitas as to the scale of the means, and just how spread out the boxs are at certain points. 
+
+### Hypothesis Testing
+
+#### Power
+
+First, let's calculate our power, assuming we want 90% power, at a 1 delta, at our current standard deviation.
+
+```{r}
+std_dev = sd(teeth$len)
+power.t.test(n = 30, delta = 1, sd = std_dev, sig.level = .95, type = "two.sample")
+```
+
+.67 isn't great, but we have two different dials we can turn, delta and significance level. I would like to keep the .95 significance, so let's turn up the delta and see what we can land at. 
+
+```{r}
+power.t.test(n = 30, delta = 2, sd = std_dev, sig.level = .95, type = "two.sample")
+```
+
+At a delta of 2, which is a little more than a quarter of a standard deviation, we have a power of .82, which is acceptable.
+
+#### T-tests
+
+Two t-test will be deployed to help us understand our data. The first will to test the null hypothesis that a change in dosage does not change cell response. For this, we will use the dosage at .5 and 2
+
+```{r}
+library(dplyr)
+
+less_vitamins <- teeth %>%
+        subset(dose == .5)
+
+more_vitamins <- teeth %>%
+        subset(dose == 2)
+
+t.test(more_vitamins$len, less_vitamins$len, paired = FALSE, var.equal = TRUE)
+```
+
+From the output, we can see that the p value is incredibly small (and therefore significant). $H_a$ was that the difference in means was not equal, however it might be more apt to test if a higher dose yields higher cell response. 
+
+```{r}
+t.test(more_vitamins$len, less_vitamins$len, paired = FALSE, var.equal = TRUE, alternative = "greater")
+```
+
+It can be concluded that a higher dosage yields a higher mean.
+
+Now, let's test if there exists a difference in cell response between orange Juice and ascorbic acid as the delivery method. 
+
+```{r}
+library(tidyselect)
+
+oj <- teeth %>%
+        filter(supp == "OJ")
+
+vc <- teeth %>%
+        filter(supp == "VC")
+
+t.test(oj$len, vc$len, paired = FALSE, var.equal = TRUE)
+```
+
+The p-value is greater than .05, and the 95% confidence interval contains 0. Now we need to bring back power into the discussion. We have enough power to NOT be able to reject the null hypothesis that the means of the two groups are not different. 
+
+
+### Other analysis
+It would be reasonable to use an ANOVA and a linear model to attempt to predict if the delivery method or dosage had an effect, and be able to measure that effect. Unfortunantly, that is outside the project scope. 
