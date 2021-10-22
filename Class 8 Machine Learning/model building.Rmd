@@ -1,0 +1,138 @@
+---
+title: "Johns Hopkins Data Science: Practical Machine Learning"
+output: html_notebook
+---
+## Background Information
+> Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data Wrangling
+Data can be found at the following links:
+
+        1. *Training* https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+        2. *Testing* https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The testing data is comprised of 19622 observations by 160 variables, measuring the pitch, roll, yaw, acceleration, and a variety of other factors relating to the measurements of that area of the body. 
+
+First, let's split the training data into three sections: the training, testing, and validation. 
+
+```{r Reading in Data, warning=FALSE}
+library(caret)
+library(tidyverse)
+library(pROC)
+library(ggthemes)
+
+set.seed(1337)
+
+
+all_training <- read.csv("pml-training.csv")
+
+nearzero <- nearZeroVar(select(all_training, -c(classe)))
+
+all_training <- all_training[ ,-nearzero]
+
+all_training <- all_training[,colMeans(is.na(all_training)) < .9]
+
+all_training <- all_training %>%
+        select(-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, num_window))
+
+train_test_split <- createDataPartition(all_training$classe, p = .7, list = FALSE)
+
+training <- all_training[train_test_split, ]
+
+testing_validation <- all_training[-train_test_split, ]
+
+testing_validation_split <- createDataPartition(testing_validation$classe, p = .7, list = FALSE)
+
+testing <- testing_validation[testing_validation_split, ]
+validation <- testing_validation[-testing_validation_split, ]
+
+rm(all_training, testing_validation_split, train_test_split, testing_validation)
+
+dim(training)
+```
+
+At this point we have three individual data sets, a training set, a testing set, and a validation set, with 59 variables in the sets.
+
+
+### Model Building
+
+We can test the most popular supervised classification models: Random Forest, SVM, and K-Nearest Neighbors.
+
+First let's set up cross validation
+```{r}
+tcontrol <- trainControl(method = "cv", number = 10, verboseIter = F)
+```
+
+#### Random Forest
+
+```{r}
+randFor <- train(classe~., data = training, method = "rf", preProcess = c("center", "scale"), trControl = tcontrol)
+```
+
+```{r}
+ggplot(data = randFor, mapping = aes(x = results$mtry, y = results$Accuracy)) + geom_smooth()
+```
+
+```{r}
+rfpredict <- predict(randFor, testing)
+
+confusionMatrix(rfpredict, factor(testing$classe))
+```
+
+Well that is much better than I expected, but we can continue with our other models
+
+#### SVM
+
+We'll use SVM with a linear kernel.
+```{r}
+svm <- train(classe~., data = training, method = "svmLinear", preProcess = c("center", "scale"), trControl = tcontrol)
+
+svm_predict <- predict(svm, testing)
+
+confusionMatrix(svm_predict, factor(testing$classe))
+```
+
+Not quite as good as the random forest, but we're going to test KNN just in case.
+
+
+#### KNN
+
+```{r}
+knn <- train(classe~., data = training, method = "knn", preProcess = c("center", "scale"), trControl = tcontrol)
+
+knn_predict <- predict(knn, testing)
+
+confusionMatrix(knn_predict, factor(testing$classe))
+```
+
+This is also a very good model, and argueably may be better for out of sample error. 
+
+#### Validation
+
+We'll use our best model, testing using the validation set, and a final prediction on our testing set.
+```{r}
+val_predicts <- predict(randFor, validation, type = "raw")
+
+confusionMatrix(val_predicts, factor(validation$classe))
+
+```
+
+We have almost perfect classification on the validation set, so I'm convinced this a good model. Let's apply it to our actual test set now.
+
+
+
+#### Test Set Predictions
+```{r}
+test_set <- read_csv("pml-testing.csv", show_col_types = FALSE)
+
+final_predictions <- predict(randFor, newdata = test_set)
+
+```
+
+
+
+### Citations
+
+Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6
+
+Read more: http:/groupware.les.inf.puc-rio.br/har#sbia_paper_section#ixzz4TjprmnaJ

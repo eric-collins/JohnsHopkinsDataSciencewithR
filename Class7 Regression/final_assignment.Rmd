@@ -1,0 +1,286 @@
+---
+title: "What is the impact of an automatic or manual transmission on MPG?"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+
+
+## Executive Summary
+
+The results of this study were inconclusive. The weight of the vehicle and the displacement of the vehicle have for more impact on the MPG than does the transmission. To that end, light cars with small engines are being outfitted with manual transmissions far more often than a heavy cars with large engines, most likely as a cost-saving measure, and so a direct comparison could not be made using this dataset. 
+
+
+### Exploratory Analysis
+
+“Is an automatic or manual transmission better for MPG”
+
+"Quantify the MPG difference between automatic and manual transmissions"
+
+#### Data loading and manipulation
+
+First, we load the data. 
+
+```{r}
+cars <- mtcars
+str(cars)
+```
+The variables are described as:
+
+*       mpg	Miles/(US) gallon
+*       cyl	Number of cylinders
+*       disp	Displacement (cu.in.)
+*       hp	Gross horsepower
+*       drat	Rear axle ratio
+*       wt	Weight (1000 lbs)
+*       qsec	1/4 mile time
+*       vs	Engine (0 = V-shaped, 1 = straight)
+*       am	Transmission (0 = automatic, 1 = manual)
+*       gear	Number of forward gears
+*       carb	Number of carburetors
+
+We need to recode vs and am as factor variables, and convert weight to it's appropriate value
+```{r}
+library(dplyr)
+cars <- cars %>%
+        mutate(vs = factor(vs, levels = c(0,1), labels = c("V-Shaped", "Straight")),
+               am = factor(am, levels = c(0,1), labels = c("Automatic", "Manual")), 
+               wt = wt * 1000)
+str(cars)
+```
+
+#### Exploratory Visualizations
+Now that variables are properly coded, we can begin exploring our variables that will be used in a model. 
+
+First, a boxplot of our outcome variable, MPG, by the kind of transmission. 
+```{r}
+library(ggplot2)
+library(ggthemes)
+
+ggplot(data = cars, mapping = aes(x = am, y = mpg, fill = am)) + 
+        geom_boxplot() + 
+        xlab("Transmission Type")+
+        ylab("Miles Per Gallon") +
+        theme(legend.position = "none") +
+        theme_economist() +
+        scale_fill_economist()
+```
+
+Generally speaking, it appears manual transmission vehicles get higher MPG. 
+
+Let's explore MPG as a fuction of other variables, starting with weight. 
+```{r}
+ggplot(data = cars, mapping = aes(x = wt, y = mpg, color = am)) + 
+        geom_point(size = 2) + 
+        xlab("Vehicle Weight")+
+        ylab("Miles Per Gallon") +
+        theme(legend.position = "none") +
+        theme_economist() +
+        scale_color_economist()
+```
+
+Here we can see that lighter vehicles tend to be manual transmissions, and such have higher MPG.
+
+Finally, let's explore MPG as a function of displacement. 
+
+```{r}
+ggplot(data = cars, mapping = aes(x = disp, y = mpg, color = am)) + 
+        geom_point(size = 2) + 
+        xlab("Engine Displacement(cubic inches)")+
+        ylab("Miles Per Gallon") +
+        theme(legend.position = "none") +
+        theme_economist() +
+        scale_color_economist()
+```
+
+Vehicles with manual transmissions also appear to be built with smaller engines, allowing for more MPG. 
+
+### Predictive Modelling
+
+With intial analysis, let's begin to model our assumptions. MPG is a continuous variable, and so our model will be an ordinary least squares regression. Let's begin by modelling MPG as the outcome, and transmission type as the predictor.
+
+```{r}
+library(broom)
+
+linear1 <- lm(mpg~am, data = cars)
+
+tidy(linear1)
+```
+
+According to our simplest model, having a manual transmission put in your car will, on average, increase MPG by 7.2. 
+
+
+Let's explore further, using weight and displacement as predictors with transmission. 
+
+```{r}
+linear2 <- lm(mpg~am + disp + wt, data = cars)
+
+tidy(linear2)
+```
+
+With this model, having a manual transmission is no longer a signficant predictor of any change in MPG!
+
+Let's take a look the correlations between our predictors. 
+
+```{r}
+library(corrr)
+library(corrplot)
+
+corr <- cars %>%
+        select(mpg, wt, disp, am) %>%
+        mutate(am = as.numeric(am)) %>%
+        correlate()
+
+rplot(corr, colours = c("#7C260B", "white", "#014D64")) +
+        theme_economist()
+```
+
+MPG is heavily correlated to displacement and weight, and transmission type is correlated to weight. Displacement and weight are also heavily correlated. Let's do some more modelling to see what a good combination of these may be.
+
+Let's start by removing displacement and seeing if that improves our model using ANOVA to evaluate.
+```{r}
+linear3 <- lm(mpg~am + wt, data = cars)
+
+
+tidy(anova(linear3,linear2))
+
+```
+$H_0$ = Adding Displacement to the model did not change the model. 
+
+$H_a$ = Adding Displacement to the model did change the model.
+
+As we can see, our P-value is greater than the standard of .05, and so we fail to reject the null. However, a strong argument can be made about any of the variables. Let's try the same process, instead of adding displacement, let's add the interaction between weight and displacement.
+
+
+```{r}
+linear4 <- lm(mpg ~ am + wt + disp + (wt*disp), data = cars)
+
+tidy(linear4)
+```
+
+```{r}
+tidy(anova(linear2,linear4))
+```
+$H_0$ = Adding the interaction between weight and displacement to the model did not change the model. 
+
+$H_a$ = Adding the interaction between weight and displacement to the model did change the model.
+
+
+Our P-Value is far below the standard of .05, and so we reject the null that the model did not change. 
+
+Finally, let's work through interactions between the transmission type and the weight and displacement.
+
+```{r}
+linear5 <- lm(mpg ~ am + wt + disp + (wt*disp) + (am*wt), data = cars)
+linear6 <- lm(mpg ~ am + wt + disp + (wt*disp) + (am*disp), data = cars)
+linear7 <- lm(mpg ~ am + wt + disp + (wt*disp) + (am*wt) + (am*disp), data = cars)
+linear8 <- lm(mpg ~ wt + disp + (wt*disp), data = cars)
+
+
+comparison1 <- tidy(anova(linear4, linear5))
+comparison2 <- tidy(anova(linear4, linear6))
+comparison3 <- tidy(anova(linear4, linear7))
+comparison4 <- tidy(anova(linear8, linear4))
+
+comparison1$p.value
+comparison2$p.value
+comparison3$p.value
+comparison4$p.value
+```
+
+Adding the interaction term between transmission and any of the other predictors did not add anything to the model. 
+
+However, there was another interesting model at the end of the comparison list. Comparison4 compared a model with no Transmission variable against one that did, and found that adding transmission to the model was not useful!
+
+Let's compare the model with transmission to that without.
+
+```{r}
+tidy(linear4)
+tidy(linear8)
+```
+
+Finally, let's plot the residuals of our final model to check for any strangeness. 
+
+```{r}
+plt1 <- ggplot(mapping = aes(x = linear8$fitted.values, y = linear8$residuals)) +
+        geom_point() +
+        geom_hline(mapping = aes(yintercept = 0)) +
+        geom_smooth(se = FALSE, color = "#014d64") +
+        labs(title = "Without Transmission") +
+        ylab("Residuals")+
+        xlab("Fitted Values")+
+        theme_economist()
+
+plt1
+
+```
+
+Not fantastic, or terrible. 
+
+Let's plot the residuals of the model with a transmission variable
+
+```{r}
+library(cowplot)
+
+plt2 <- ggplot(mapping = aes(x = linear4$fitted.values, y = linear4$residuals)) +
+        geom_point() +
+        geom_hline(mapping = aes(yintercept = 0)) +
+        geom_smooth(se = FALSE, color = "#014d64") +
+        labs(title = "With Transmission") +
+        ylab("Residuals") +
+        xlab("Fitted Values") +
+        theme_economist()
+
+cowplot::plot_grid(plt1, plt2)
+```
+
+These residuals are much better, so maybe having the transmission type adds something the ANOVA can't see. Let's do a qq plot and find out if there are any other patterns
+
+```{r}
+plt1 <- ggplot(cars, aes(sample = linear4$residuals)) + 
+        geom_qq() +
+        geom_qq_line(color = "#014d64") +
+        labs(title = "With Transmission")+
+        theme_economist()
+
+plt2 <- ggplot(cars, aes(sample = linear8$residuals)) + 
+        geom_qq() +
+        geom_qq_line(color = "#014d64") +
+        labs(title = "Without Transmission")+
+        theme_economist()
+
+cowplot::plot_grid(plt1, plt2)
+```
+
+It looks like adding transmission to the model disrupts some of the issues with the residuals. 
+
+### Interpretation
+
+Let's look at our coefficients again
+
+```{r}
+model <- linear8
+tidy(model)
+```
+
+
+*       All else being equal, a car starts with 44 MPG.
+
+*       All else being equal, for every one pound increase in weight, the MPG drops by -.006 MPG, or for every 1000 pounds, drops by -6.5 MPG
+
+*       All else being equal, for every cubic inch increase in displacement, the MPG drops by -.05 MPG
+
+
+The original questions of
+
+*       Is an automatic or manual transmission better for MPG
+
+*       Quantify the MPG difference between automatic and manual transmissions
+
+are not answerable in this dataset. All indications are that transmission has much less to do with the MPG of car as opposed to weight and the displacement of the engine. 
+
+To conduct further analysis, a dataset with the same car, but with two different kinds of transmission, and their MPG, would be necessary for a direct apples to apples comparison. 
+
+As it stands, it is far more likely for a car to be made light, with small engines, and with a manual transmission (most likely to save money) than for a car to be made heavy, with a large engine, and a manual transmission for that comparison. 
