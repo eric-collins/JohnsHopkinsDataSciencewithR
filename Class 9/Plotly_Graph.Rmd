@@ -1,0 +1,107 @@
+---
+title: "Performance of GME"
+date: "10/28/2021"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+---
+
+# Loading Libraries and Getting ticker info
+
+```{r, warning = FALSE, message= FALSE}
+library(plotly)
+library(quantmod)
+library(TTR)
+library(tidyverse)
+```
+
+```{r}
+getSymbols("GME", source = 'yahoo')
+```
+
+# Cleaning Data and Generating Signals
+```{r}
+df <- data.frame(Date = index(GME), coredata(GME))
+
+df <- df %>%
+        mutate(movement = if_else(GME.Close >= GME.Open, "Increasing", "Decreasing")) %>%
+        mutate(avg_30 = SMA(GME.Close, n = 30),
+               avg_90 = SMA(GME.Close, n = 90)) %>%
+        mutate(good_signal = if_else(avg_30 >= avg_90, 1, 0)) %>%
+        mutate(buy = if_else(good_signal - lag(good_signal) == 1, 1, 0),
+               sell = if_else(good_signal - lag(good_signal) == -1, 1, 0)) %>%
+        filter(Date >= "2020/06/01")
+
+buys <- df %>%
+        filter(buy == 1)
+
+sell <- df %>%
+        filter(sell == 1)
+
+```
+
+# Writing the Plotly graph
+```{r}
+i <- list(line = list(color = 'black'))
+d <- list(line = list(color = 'red'))
+
+fig <- df %>%
+        plot_ly(x = ~Date, type = "candlestick",
+                open = ~GME.Open, close = ~GME.Close,
+                high = ~GME.High, low = ~GME.Low, name = "GME",
+                increasing = i, decreasing = d, width = 1000, height = 600) %>%
+        add_lines(y = ~avg_30, name = "Closing 30D MvgAvg",
+                  line = list(color = 'cadetblue')) %>%
+        add_lines(y = ~avg_90, name = "Closing 90D MvgAvg",
+                  line = list(color = 'blue')) %>%
+        add_segments(x = buys$Date, xend = buys$Date, y = 0, yend = 500, line = list(color = "green"), name = "Buy Signal") %>%
+        add_segments(x = sell$Date, xend = sell$Date, y = 0, yend = 500, line = list(color = "orange"), name = "Sell Signal") %>%
+        layout(yaxis = list(title = "Price"))
+        
+```
+
+# The graph
+```{r, echo = F, warning = FALSE, message= FALSE}
+fig
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

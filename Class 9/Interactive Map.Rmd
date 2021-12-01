@@ -1,0 +1,88 @@
+---
+title: "Volusia County Schools by Enrollment"
+date: "10/28/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r, warning = FALSE}
+library(leaflet)
+library(tidyverse)
+library(readxl)
+library(htmltools)
+```
+
+```{r}
+enrollment <- read_excel("student counts.xlsx")
+logos <- read_excel("logos.xlsx")
+
+logos <- logos %>%
+        select(-c(Lat, Long))
+
+all_school <- enrollment %>%
+        rename(sch_num = school_enrollment) %>%
+        inner_join(logos, by = c("sch_num" = "sch_num")) %>%
+        select(sch_num, student, Lat, School_Name, Level, Logo) %>%
+        separate(Lat, c("Lat", "Long"), ",") %>%
+        mutate(Lat = as.numeric(Lat), Long = as.numeric(Long)) %>%
+        mutate(color_elementary = if_else(Level == "Elementary", "lightblue", ""),
+               color_middle = if_else(Level == "Middle", "cadetblue", ""),
+               color_high = if_else(Level == "High", "darkblue", ""),
+               color = str_trim(paste(color_elementary, color_middle, color_high))) %>%
+        select(-c(color_elementary, color_middle, color_high)) %>%
+        rename(enrollment = student) %>%
+        mutate(adjusted_radius = enrollment * .025) %>%
+        mutate(enrollment = round(enrollment, -1))
+```
+
+
+```{r}
+
+highcoords <- all_school %>%
+        filter(Level == "High") %>%
+        mutate(labels = paste0("<b>", School_Name, "<b><br/> Enrollment: ", enrollment))
+
+middlecoords <- all_school %>%
+        filter(Level == "Middle") %>%
+        mutate(labels = paste0("<b>", School_Name, "<b><br/> Enrollment: ", enrollment))
+
+elemcoords <- all_school %>%
+        filter(Level == "Elementary") %>%
+        mutate(labels = paste0("<b>", School_Name, "<b><br/> Enrollment: ", enrollment))
+
+my_map <- leaflet(highcoords) %>%
+                addTiles() %>%
+                addCircleMarkers(
+                         color = ~color, 
+                         radius = ~adjusted_radius, 
+                         opacity = 1, 
+                         group = "Highschools",
+                         popup = ~labels, 
+                         label = ~School_Name) %>%
+                addCircleMarkers(data = middlecoords,
+                                 color = ~color, 
+                                 radius = ~adjusted_radius, 
+                                 opacity = 1, 
+                                 group = "Middle Schools",
+                                 label = ~School_Name,
+                                 popup = ~labels) %>%
+                addCircleMarkers(data = elemcoords,
+                                 color = ~color,
+                                 radius = ~adjusted_radius,
+                                 opacity = 1,
+                                 group = "Elementary Schools",
+                                 label = ~School_Name,
+                                 popup = ~labels) %>%
+                addLayersControl(overlayGroups = c("Highschools", "Middle Schools", "Elementary Schools"),
+                                 position = c('topright'))
+        
+        
+
+
+my_map
+```
+
+
+

@@ -1,0 +1,73 @@
+---
+title: "Shiny Pitch"
+author: "Eric Collins"
+date: "11/7/2021"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+---
+
+
+
+
+## Reason
+
+* Exploration of signals within a stock price can be a difficult and tedious process.
+* Automation of this process could result in more people being involved in the stock market
+* Relevance in current zeitgeist with Gamestop and the culture currently around it
+
+
+## Original Design
+
+I developed the original plot as a part the Johns Hopkins Coursera Data Science course. The code was useful and reproducible, and so I implementation it in a shiny app. 
+
+## Original Plot
+
+```{r, warning = F, message = F}
+library(plotly)
+library(quantmod)
+library(TTR)
+library(tidyverse)
+
+getSymbols("GME", source = 'yahoo')
+
+df <- data.frame(Date = index(GME), coredata(GME))
+
+df <- df %>%
+        mutate(movement = if_else(GME.Close >= GME.Open, "Increasing", "Decreasing")) %>%
+        mutate(avg_30 = SMA(GME.Close, n = 30),
+               avg_90 = SMA(GME.Close, n = 90)) %>%
+        mutate(good_signal = if_else(avg_30 >= avg_90, 1, 0)) %>%
+        mutate(buy = if_else(good_signal - lag(good_signal) == 1, 1, 0),
+               sell = if_else(good_signal - lag(good_signal) == -1, 1, 0)) %>%
+        filter(Date >= "2020/06/01")
+
+buys <- df %>%
+        filter(buy == 1)
+
+sell <- df %>%
+        filter(sell == 1)
+
+i <- list(line = list(color = 'black'))
+d <- list(line = list(color = 'red'))
+
+fig <- df %>%
+        plot_ly(x = ~Date, type = "candlestick",
+                open = ~GME.Open, close = ~GME.Close,
+                high = ~GME.High, low = ~GME.Low, name = "GME",
+                increasing = i, decreasing = d, width = 1000, height = 600) %>%
+        add_lines(y = ~avg_30, name = "Closing 30D MvgAvg",
+                  line = list(color = 'cadetblue')) %>%
+        add_lines(y = ~avg_90, name = "Closing 90D MvgAvg",
+                  line = list(color = 'blue')) %>%
+        add_segments(x = buys$Date, xend = buys$Date, y = 0, yend = 500, line = list(color = "green"), name = "Buy Signal") %>%
+        add_segments(x = sell$Date, xend = sell$Date, y = 0, yend = 500, line = list(color = "orange"), name = "Sell Signal") %>%
+        layout(yaxis = list(title = "Price"))
+        
+fig
+```
+
+
+## Updates
+
+The code has been refactored to allow for every stock ticker on the Yahoo! Finance Database with user input, driving exploration and learning. 

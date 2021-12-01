@@ -1,0 +1,292 @@
+---
+title: "Johns Hopkins Data Science Coursera Capstone Exploratory Analysis"
+output:
+        prettydoc::html_pretty:
+                theme: leonids
+---
+
+```{r, echo = F, message = F, warning = F}
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
+```
+
+```{r}
+library(doParallel)
+registerDoParallel()
+```
+
+```{r}
+library(tm)
+library(tidyverse)
+library(tidytext)
+library(stringi)
+library(fuzzyjoin)
+library(ggwordcloud)
+library(ggthemes)
+library(qdapDictionaries)
+library(knitr)
+library(prettydoc)
+```
+
+```{r}
+blogs <- './Coursera-SwiftKey/final/en_US/en_US.blogs.txt'
+
+blog_con <- file(blogs, encoding = 'latin1')
+
+blog_lines <- tibble(readLines(con = blog_con, encoding = 'latin1'))
+
+blog_lines <- blog_lines %>%
+        rename(text = `readLines(con = blog_con, encoding = "latin1")`) %>%
+        mutate(input_file = 'blog')
+
+
+
+news <- './Coursera-SwiftKey/final/en_US/en_US.news.txt'
+
+news_con <- file(news, encoding = 'latin1')
+
+news_lines <- tibble(readLines(con = news_con, encoding = "latin1"))
+
+news_lines <- news_lines %>%
+        rename(text = `readLines(con = news_con, encoding = "latin1")`) %>%
+        mutate(input_file = 'news')
+
+
+
+twitter <- './Coursera-SwiftKey/final/en_US/en_US.twitter.txt'
+
+twitter_con <- file(twitter, encoding = 'latin1')
+
+twitter_lines <- tibble(readLines(con = twitter_con, encoding = "latin1"))
+
+twitter_lines <- twitter_lines %>%
+        rename(text = `readLines(con = twitter_con, encoding = "latin1")`) %>%
+        mutate(input_file = 'twitter')
+
+
+
+
+```
+
+# Initial Analysis
+
+For the initial exploratory analysis, we will answer three questions: 
+
+* How many lines are in each of our three files?
+* How many words are in each of our three files?
+* What is the distribution of the frequency of words compiled across the three files?
+
+```{r}
+corpus <- bind_rows(blog_lines, twitter_lines, news_lines)
+
+rm(blog_lines, news_lines, twitter_lines)
+
+num_lines <- corpus %>%
+        group_by(input_file) %>%
+        count(input_file, name = "Number of Lines")
+
+kable(num_lines)
+```
+
+
+```{r}
+corpus <- corpus %>%
+        slice_sample(prop = .20)
+
+badwords <- readLines("./badwords.txt")
+dictionary <- tibble(DICTIONARY)
+```
+
+
+
+```{r}
+
+
+replacePunctuation <- function(x){ gsub("[^[:alnum:][:space:]'`]", " ", x)}
+
+
+unigram <- corpus %>%
+        group_by(input_file) %>%
+        unnest_tokens(word, text) %>%
+        mutate(word = stri_trans_general(word, 'latin-ascii'),
+               word = removeNumbers(word),
+               word = replacePunctuation(word)) %>%
+        filter(!(word %in% badwords),
+               (word != "" ),
+               !(word %in% c('s', 't', 'ia', 'u', 'd', "", " ", " i")))
+word_counts <- unigram %>%
+        count(input_file, name = "Word Count")
+
+kable(word_counts)
+
+
+unigram <- corpus %>%
+        select(-c(input_file)) %>%
+        unnest_tokens(word, text) %>%
+        mutate(word = stri_trans_general(word, 'latin-ascii'),
+               word = removeNumbers(word),
+               word = replacePunctuation(word)) %>%
+        filter(!(word %in% badwords),
+               (word != "" ),
+               !(word %in% c('s', 't', 'ia', 'u', 'd')))
+
+```
+
+
+
+```{r}
+bigram <- corpus %>%
+        unnest_tokens(bigram, text, token = 'ngrams', n = 2) %>%
+        separate(bigram, c('word1', 'word2'), sep = " ") %>%
+        mutate(word1 = stri_trans_general(word1, 'latin-ascii'),
+               word2 = stri_trans_general(word2, 'latin-ascii'),
+               word1 = removeNumbers(word1),
+               word2 = removeNumbers(word2),
+               word1 = replacePunctuation(word1),
+               word2 = replacePunctuation(word2)) %>%
+        filter(!(word1 %in% badwords),
+               !(word2 %in% badwords),
+               (word1 != ""),
+               (word2 != ""),
+               !(word1 %in% c('s','t', 'ia', 'u', 'd', 'youa')),
+               !(word2 %in% c('s' ,'t', 'ia', 'u', 'd'))) %>%
+        unite(bigram, word1, word2, sep = " ")
+
+trigram <- corpus %>%
+        unnest_tokens(trigram, text, token = 'ngrams', n = 3) %>%
+        separate(trigram, c('word1', 'word2', 'word3'), sep = " ") %>%
+        mutate(word1 = stri_trans_general(word1, 'latin-ascii'),
+               word2 = stri_trans_general(word2, 'latin-ascii'),
+               word3 = stri_trans_general(word3, 'latin-ascii'),
+               word1 = removeNumbers(word1),
+               word2 = removeNumbers(word2),
+               word3 = removeNumbers(word3),
+               word1 = replacePunctuation(word1),
+               word2 = replacePunctuation(word2),
+               word3 = replacePunctuation(word3)) %>%
+        filter(!(word1 %in% badwords),
+               !(word2 %in% badwords),
+               !(word3 %in% badwords),
+               (word1 != ""),
+               (word2 != ""),
+               (word3 != ""),
+               !(word1 %in% c('s','t', 'ia', 'u', 'd', "")),
+               !(word2 %in% c('s' ,'t', 'ia', 'u', 'd', "")),
+               !(word3 %in% c('s' ,'t', 'ia', 'u', 'd', ""))) %>%
+        unite(trigram, word1, word2, word3, sep = " ")
+
+```
+
+
+
+```{r}
+
+counts <- unigram %>%
+        count(word, name = "count") %>%
+        slice_max(count, n = 20)
+
+ggplot(data = counts, mapping = aes(label = word, size = count)) + 
+        geom_text_wordcloud(color = "#014d64") +
+        scale_size_area(max_size = 20) +
+        theme_economist() +
+        labs(title = "Most Common Words")
+```
+
+
+
+
+
+```{r}
+
+counts <- bigram %>%
+        count(bigram, name = "count") %>%
+        slice_max(count, n = 20)
+
+ggplot(data = counts, mapping = aes(label = bigram, size = count)) + 
+        geom_text_wordcloud(color = "#014d64") +
+        scale_size_area(max_size = 20) +
+        theme_economist() +
+        labs(title = "Most Common Bigrams")
+```
+
+
+
+
+```{r}
+counts <- trigram %>%
+        count(trigram, name = "count") %>%
+        slice_max(count, n = 10)
+
+ggplot(data = counts, mapping = aes(label = trigram, size = count)) + 
+        geom_text_wordcloud(color = "#014d64") +
+        scale_size_area(max_size = 16) +
+        theme_economist() +
+        labs(title = "Most Common Trigrams")
+```
+
+
+
+If we observe the distribution of single words, we can plot the number of most common words vs. percent coverage of the local lexicon.
+```{r}
+frequencies <- unigram %>%
+        count(word, name = "count") %>%
+        arrange(desc(count)) %>%
+        mutate(coverage = (cumsum(count) / sum(count)) * 100)
+
+frequencies <- frequencies %>%
+        mutate(word_count = 1:nrow(frequencies))
+
+ggplot(data = frequencies, mapping = aes(x = word_count, y = coverage)) +
+        geom_area(fill = "#014d64", color = "#7c260b") +
+        theme_economist() +
+        labs(title = "Coverage of Local Lexicon") +
+        xlab("Number of Most Common Words") +
+        ylab("Percent Coverage of the Local Lexicon") +
+        xlim(0, 20000)
+        
+        
+```
+
+## Model Building
+
+
+
+For prediction, we will use a Markov Chain approach with a naive back-off. When we train our Markov chain, not all possible combinations of words will be in the model. We will adjust our Markov Chain to give each of n-gram at least a non-zero prediction to adjust for that. We also can't train our model on all n-grams in the dataset, since that would take far too long. Instead, we will use a sample of data for our model, consisting of all of the news lines, 10% of the blog lines, and 5% of the twitter lines, giving us an approximately even split across the three input files. Because we have limited memory, the most common 30000 unigrams, 15000 bigrams, and 10000 trigrams will be used to train the models. 
+
+
+As a demonstration, we can build just the unigram Markov Chain. The process is replicated for the bigram and trigram chains. If a particular n-gram is not matched directly to the sample set, the last word of the n-gram is used in the unigram model to generate a prediction. If that fails, the most common transition is used as the prediction. 
+
+
+```{r, echo = F, message = F, warning= F}
+knitr::opts_chunk$set(message = F, warning = F, echo = T)
+```
+
+
+```{r}
+library(markovchain)
+library(tidytext)
+
+
+unigram <- read.csv("./unigram.csv")
+
+uni_chain <- markovchainFit(unigram$word, method = "laplace", laplacian = 1, parallel = TRUE)
+```
+At this point, we can now use the chain to predict the next word. Let's look at what happens we ask for a prediction on the word "next".
+
+```{r}
+
+input_word <- "next"
+
+uni_chain$estimate[input_word, ] %>%
+        sort(decreasing = T) %>%
+        head(1) %>%
+        names()
+```
+
+Using this process, we can give a prediction for any word in our local lexicon. Unfortunately, words outside our lexicon return an error, and so we can just return the word given to us using the transition with the highest likelihood in our local lexicon.
+
+### Shortcomings
+
+Our model is only capable of giving us predictions based on the words we've trained our model on. To add additional words, we would need to record the set of words, then retrain our models with that word in our corpus. This is time-consuming process using this strategy. Our model also takes up 3 times the space in memory as a bag-of-words model, since we're training three separate models to handle three separate situations.
+
+
+

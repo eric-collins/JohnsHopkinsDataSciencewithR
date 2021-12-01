@@ -1,0 +1,11 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/828360/f923f18838954bb59ad80af183cd1bf1
+bundleId: https://api.rpubs.com/api/v1/document/828360/f923f18838954bb59ad80af183cd1bf1
+url: http://rpubs.com/EricC/828360
+when: 1635432458.10031
+lastSyncTime: 1635432458.10031
